@@ -1,18 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const User = require("../models/User");
-const nodemailer = require("nodemailer");
 
-// 📧 Nodemailer transporter
-const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+// 📧 SendGrid setup
+const sgMail = require("@sendgrid/mail");
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // =======================
 // ✅ SIGNUP ROUTE
@@ -21,40 +13,41 @@ router.post("/signup", async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
-    // 🔍 Check existing user
     const existingUser = await User.findOne({ email });
 
     if (existingUser) {
-      // Send alert email
-      await transporter.sendMail({
-        from: process.env.EMAIL_USER,
-        to: email,
-        subject: "Signup Attempt ⚠️",
-        text: "Someone tried to signup using your email.",
-      });
+      // Alert email
+      try {
+        await sgMail.send({
+          to: email,
+          from: process.env.EMAIL_USER, // verified sender
+          subject: "Signup Attempt ⚠️",
+          text: "Someone tried to signup using your email.",
+        });
+      } catch (err) {
+        console.log("Signup alert email failed:", err.message);
+      }
 
       return res.json({ message: "User already exists" });
     }
 
-    // 💾 Save new user
+    // Save user
     const newUser = new User({ username, email, password });
     await newUser.save();
 
-    // 🎉 Welcome email
-   await newUser.save();
+    // Welcome email
+    try {
+      await sgMail.send({
+        to: email,
+        from: process.env.EMAIL_USER,
+        subject: "Welcome 🎉",
+        text: `Hello ${username}, welcome to our app!`,
+      });
+    } catch (err) {
+      console.log("Signup email failed:", err.message);
+    }
 
-// ✅ email should NOT break signup
-try {
-  await transporter.sendMail({
-    from: process.env.EMAIL_USER,
-    to: email,
-    subject: "Welcome 🎉",
-    text: `Hello ${username}, welcome to our app!`,
-  });
-} catch (err) {
-  console.log("Signup Email failed:", err.message);
-}
-return res.json({ message: "Signup successful" });
+    return res.json({ message: "Signup successful" });
 
   } catch (error) {
     console.log("Signup Error:", error);
@@ -63,13 +56,12 @@ return res.json({ message: "Signup successful" });
 });
 
 // =======================
-// ✅ LOGIN ROUTE (IMPROVED)
+// ✅ LOGIN ROUTE
 // =======================
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // 🔍 Find user
     const user = await User.findOne({ email });
 
     // ❌ User not found
@@ -80,20 +72,31 @@ router.post("/login", async (req, res) => {
     // ❌ Wrong password
     if (user.password !== password) {
       try {
-        await transporter.sendMail({
-          from: process.env.EMAIL_USER,
+        await sgMail.send({
           to: email,
+          from: process.env.EMAIL_USER,
           subject: "Login Alert ⚠️",
           text: "Someone tried to login with wrong password.",
         });
-      } catch (mailError) {
-        console.log("Email Error:", mailError);
+      } catch (err) {
+        console.log("Login alert email failed:", err.message);
       }
 
       return res.json({ message: "Invalid credentials" });
     }
 
-    // ✅ Success
+    // ✅ SUCCESS EMAIL
+    try {
+      await sgMail.send({
+        to: email,
+        from: process.env.EMAIL_USER,
+        subject: "Login Successful ✅",
+        text: `Hello ${user.username}, you have successfully logged in.`,
+      });
+    } catch (err) {
+      console.log("Login success email failed:", err.message);
+    }
+
     return res.json({
       message: "Login successful",
       username: user.username,
