@@ -41,14 +41,20 @@ router.post("/signup", async (req, res) => {
     await newUser.save();
 
     // 🎉 Welcome email
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: "Welcome 🎉",
-      text: `Hello ${username}, welcome to our app!`,
-    });
+   await newUser.save();
 
-    return res.json({ message: "Signup successful" });
+// ✅ email should NOT break signup
+try {
+  await transporter.sendMail({
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: "Welcome 🎉",
+    text: `Hello ${username}, welcome to our app!`,
+  });
+} catch (err) {
+  console.log("Signup Email failed:", err.message);
+}
+return res.json({ message: "Signup successful" });
 
   } catch (error) {
     console.log("Signup Error:", error);
