@@ -5,7 +5,9 @@ const nodemailer = require("nodemailer");
 
 // 📧 Nodemailer transporter
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
@@ -19,9 +21,11 @@ router.post("/signup", async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
+    // 🔍 Check existing user
     const existingUser = await User.findOne({ email });
 
     if (existingUser) {
+      // Send alert email
       await transporter.sendMail({
         from: process.env.EMAIL_USER,
         to: email,
@@ -32,9 +36,11 @@ router.post("/signup", async (req, res) => {
       return res.json({ message: "User already exists" });
     }
 
+    // 💾 Save new user
     const newUser = new User({ username, email, password });
     await newUser.save();
 
+    // 🎉 Welcome email
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: email,
@@ -51,12 +57,13 @@ router.post("/signup", async (req, res) => {
 });
 
 // =======================
-// ✅ LOGIN ROUTE (FINAL)
+// ✅ LOGIN ROUTE (IMPROVED)
 // =======================
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // 🔍 Find user
     const user = await User.findOne({ email });
 
     // ❌ User not found
@@ -80,18 +87,7 @@ router.post("/login", async (req, res) => {
       return res.json({ message: "Invalid credentials" });
     }
 
-    // ✅ SUCCESS LOGIN → SEND EMAIL
-    try {
-      await transporter.sendMail({
-        from: process.env.EMAIL_USER,
-        to: email,
-        subject: "Login Successful ✅",
-        text: `Hello ${user.username}, you have successfully logged in at ${new Date().toLocaleString()}.`,
-      });
-    } catch (mailError) {
-      console.log("Email Error:", mailError);
-    }
-
+    // ✅ Success
     return res.json({
       message: "Login successful",
       username: user.username,
