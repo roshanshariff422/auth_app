@@ -37,8 +37,9 @@ router.post("/signup", async (req, res) => {
     }
 
     // 💾 Save new user
-    const newUser = new User({ username, email: email.toLowerCase(), password });
-    await newUser.save();
+    const emailClean = email.trim().toLowerCase();
+    const newUser = new User({ username, email: emailClean, password });
+    
 
     // 🎉 Welcome email
     await transporter.sendMail({
@@ -64,7 +65,8 @@ router.post("/login", async (req, res) => {
     const { email, password } = req.body;
 
     // 🔍 Find user
-    const user = await User.findOne({ email: email.toLowerCase(), });
+    const emailClean = email.trim().toLowerCase();
+    const user = await User.findOne({ email: emailClean, });
 
     // ❌ User not found
     if (!user) {
