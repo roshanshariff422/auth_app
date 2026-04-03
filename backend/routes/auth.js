@@ -20,7 +20,7 @@ router.post("/signup", async (req, res) => {
       try {
         await sgMail.send({
           to: email,
-          from: process.env.EMAIL_USER, // verified sender
+          from: process.env.EMAIL_FROM, // verified sender
           subject: "Signup Attempt ⚠️",
           text: "Someone tried to signup using your email.",
         });
@@ -39,7 +39,7 @@ router.post("/signup", async (req, res) => {
     try {
       await sgMail.send({
         to: email,
-        from: process.env.EMAIL_USER,
+        from: process.env.EMAIL_FROM,
         subject: "Welcome 🎉",
         text: `Hello ${username}, welcome to our app!`,
       });
@@ -74,7 +74,7 @@ router.post("/login", async (req, res) => {
       try {
         await sgMail.send({
           to: email,
-          from: process.env.EMAIL_USER,
+          from: process.env.EMAIL_FROM,
           subject: "Login Alert ⚠️",
           text: "Someone tried to login with wrong password.",
         });
@@ -89,7 +89,7 @@ router.post("/login", async (req, res) => {
     try {
       await sgMail.send({
         to: email,
-        from: process.env.EMAIL_USER,
+        from: process.env.EMAIL_FROM,
         subject: "Login Successful ✅",
         text: `Hello ${user.username}, you have successfully logged in.`,
       });
