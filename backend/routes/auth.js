@@ -87,18 +87,12 @@ router.post("/login", async (req, res) => {
       return res.json({ message: "Invalid credentials" });
     }
 
-   // ✅ SUCCESS (send email in background)
-transporter.sendMail({
-  from: process.env.EMAIL_USER,
-  to: email,
-  subject: "Login Successful ✅",
-  text: `Hello ${user.username}, you have successfully logged in.`,
-}).catch(err => console.log("Email Error:", err));
+    // ✅ Success
+    return res.json({
+      message: "Login successful",
+      username: user.username,
+    });
 
-return res.json({
-  message: "Login successful",
-  username: user.username,
-});
   } catch (error) {
     console.log("Login Error:", error);
     return res.status(500).json({ message: "Server error" });
